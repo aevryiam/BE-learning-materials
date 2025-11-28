@@ -1,10 +1,10 @@
 /**
- * COURSE CONTROLLER (Logic Layer)
- * Mengatur CRUD operations untuk Course
+ * COURSE CONTROLLER (Logic Layer - Supabase)
+ * Mengatur CRUD operations untuk Course menggunakan Supabase
  */
 
 import { Request, Response } from "express";
-import Course from "../models/courseModel";
+import CourseModel from "../models/courseModel";
 
 /**
  * @desc    Get semua courses
@@ -19,36 +19,26 @@ export const getCourses = async (
     // Query parameters
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const skip = (page - 1) * limit;
     const category = req.query.category as string;
-    const level = req.query.level as string;
+    const level = req.query.level as "beginner" | "intermediate" | "advanced";
     const search = req.query.search as string;
 
-    // Build filter object
-    const filter: Record<string, unknown> = { isPublished: true };
-
-    if (category) filter.category = category;
-    if (level) filter.level = level;
-    if (search) {
-      filter.$text = { $search: search };
-    }
-
-    const courses = await Course.find(filter)
-      .populate("instructor", "name email") // Populate data instructor
-      .limit(limit)
-      .skip(skip)
-      .sort({ createdAt: -1 });
-
-    const total = await Course.countDocuments(filter);
+    const result = await CourseModel.findAll({
+      page,
+      limit,
+      category,
+      level,
+      search,
+    });
 
     res.status(200).json({
       success: true,
-      data: courses,
+      data: result.courses,
       pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
       },
     });
   } catch (error) {
@@ -72,10 +62,7 @@ export const getCourseById = async (
   res: Response
 ): Promise<void> => {
   try {
-    const course = await Course.findById(req.params.id).populate(
-      "instructor",
-      "name email"
-    );
+    const course = await CourseModel.findById(req.params.id);
 
     if (!course) {
       res.status(404).json({
@@ -85,9 +72,15 @@ export const getCourseById = async (
       return;
     }
 
+    // Get enrolled students count
+    const enrolledCount = await CourseModel.getEnrolledCount(req.params.id);
+
     res.status(200).json({
       success: true,
-      data: course,
+      data: {
+        ...course,
+        enrolled_students_count: enrolledCount,
+      },
     });
   } catch (error) {
     const err = error as Error;
@@ -112,17 +105,26 @@ export const createCourse = async (
   try {
     const { title, description, category, level, price, duration } = req.body;
 
+    // Validasi input
+    if (!title || !description || !category || !level || !duration) {
+      res.status(400).json({
+        success: false,
+        message: "Semua field wajib diisi",
+      });
+      return;
+    }
+
     // Instructor ID dari user yang login (diset di middleware auth)
     const instructorId = (req as unknown as { user: { id: string } }).user.id;
 
-    const course = await Course.create({
+    const course = await CourseModel.create({
       title,
       description,
-      instructor: instructorId,
       category,
       level,
-      price,
+      price: price || 0,
       duration,
+      instructor_id: instructorId,
     });
 
     res.status(201).json({
@@ -151,7 +153,7 @@ export const updateCourse = async (
   res: Response
 ): Promise<void> => {
   try {
-    const course = await Course.findById(req.params.id);
+    const course = await CourseModel.findById(req.params.id);
 
     if (!course) {
       res.status(404).json({
@@ -163,7 +165,9 @@ export const updateCourse = async (
 
     // Cek apakah user adalah instructor dari course ini
     const userId = (req as unknown as { user: { id: string } }).user.id;
-    if (course.instructor.toString() !== userId) {
+    const userRole = (req as unknown as { user: { role: string } }).user.role;
+
+    if (course.instructor_id !== userId && userRole !== "admin") {
       res.status(403).json({
         success: false,
         message: "Anda tidak memiliki akses untuk mengupdate course ini",
@@ -171,14 +175,16 @@ export const updateCourse = async (
       return;
     }
 
-    const updatedCourse = await Course.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    const { title, description, category, level, price, duration } = req.body;
+
+    const updatedCourse = await CourseModel.update(req.params.id, {
+      title,
+      description,
+      category,
+      level,
+      price,
+      duration,
+    });
 
     res.status(200).json({
       success: true,
@@ -206,7 +212,7 @@ export const deleteCourse = async (
   res: Response
 ): Promise<void> => {
   try {
-    const course = await Course.findById(req.params.id);
+    const course = await CourseModel.findById(req.params.id);
 
     if (!course) {
       res.status(404).json({
@@ -218,7 +224,9 @@ export const deleteCourse = async (
 
     // Cek apakah user adalah instructor dari course ini
     const userId = (req as unknown as { user: { id: string } }).user.id;
-    if (course.instructor.toString() !== userId) {
+    const userRole = (req as unknown as { user: { role: string } }).user.role;
+
+    if (course.instructor_id !== userId && userRole !== "admin") {
       res.status(403).json({
         success: false,
         message: "Anda tidak memiliki akses untuk menghapus course ini",
@@ -226,7 +234,7 @@ export const deleteCourse = async (
       return;
     }
 
-    await Course.findByIdAndDelete(req.params.id);
+    await CourseModel.delete(req.params.id);
 
     res.status(200).json({
       success: true,

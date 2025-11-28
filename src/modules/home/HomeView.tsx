@@ -23,7 +23,7 @@ export default function HomeView() {
       {/* MVC Concept Section */}
       <section className="mb-12">
         <h2 className="text-3xl font-bold mb-6 text-black">
-          Konsep MVC (Model-View-Controller)
+          Konsep MVC (Model-View-Controller) + Supabase
         </h2>
 
         <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6 shadow-sm">
@@ -38,7 +38,9 @@ export default function HomeView() {
             <div className="border-l-4 border-blue-600 pl-4">
               <h4 className="font-semibold text-black">MODEL (Data Layer)</h4>
               <p className="text-gray-700">
-                Mengatur database, schema, validasi data
+                Mengatur database queries, schema validation, business logic
+                untuk data. Dalam project ini menggunakan{" "}
+                <strong>Supabase</strong> sebagai database & authentication.
               </p>
             </div>
             <div className="border-l-4 border-green-600 pl-4">
@@ -61,10 +63,58 @@ export default function HomeView() {
           </div>
         </div>
 
+        {/* Supabase Introduction */}
+        <div className="bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-300 rounded-lg p-6 mb-6 shadow-sm">
+          <h3 className="text-2xl font-semibold mb-4 text-black">
+            Kenapa Pakai Supabase?
+          </h3>
+          <p className="text-gray-800 mb-4">
+            Supabase adalah <strong>Open Source Firebase Alternative</strong>{" "}
+            yang menyediakan:
+          </p>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-lg p-4 border border-green-200">
+              <h4 className="font-semibold text-green-700 mb-2">Database</h4>
+              <p className="text-sm text-gray-700">
+                PostgreSQL database dengan real-time subscriptions
+              </p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <h4 className="font-semibold text-blue-700 mb-2">
+                Authentication
+              </h4>
+              <p className="text-sm text-gray-700">
+                Built-in auth dengan JWT, email/password, OAuth providers
+              </p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-purple-200">
+              <h4 className="font-semibold text-purple-700 mb-2">Storage</h4>
+              <p className="text-sm text-gray-700">
+                File storage untuk images, videos, documents
+              </p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-orange-200">
+              <h4 className="font-semibold text-orange-700 mb-2">
+                Auto-generated APIs
+              </h4>
+              <p className="text-sm text-gray-700">
+                REST & GraphQL APIs otomatis dari database schema
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 bg-white rounded-lg p-4 border border-gray-200">
+            <p className="text-sm text-gray-700">
+              <strong className="text-black">Keuntungan:</strong> Gratis untuk
+              project kecil, scalable, dashboard yang user-friendly,
+              documentation lengkap, dan TypeScript support.
+            </p>
+          </div>
+        </div>
+
         {/* Request Flow */}
         <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6 shadow-sm">
           <h3 className="text-2xl font-semibold mb-4 text-black">
-            Alur Data (Request Flow)
+            Alur Data (Request Flow dengan Supabase)
           </h3>
           <div className="bg-gray-50 p-4 rounded border border-gray-200">
             <pre className="text-sm text-black whitespace-pre-wrap">
@@ -78,12 +128,11 @@ ROUTE (routes/courseRoutes.ts)
     ↓
 CONTROLLER (controllers/courseController.ts)
   • Validasi input
-  • Panggil Model untuk query DB
+  • Panggil Model untuk query Supabase
   • Process data
     ↓
 MODEL (models/courseModel.ts)
-  • Define schema
-  • Query ke MongoDB
+  • Query ke Supabase PostgreSQL
   • Return data ke Controller
     ↓
 CONTROLLER
@@ -100,20 +149,20 @@ Client (Frontend)`}
         {/* Folder Structure */}
         <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6 shadow-sm">
           <h3 className="text-2xl font-semibold mb-4 text-black">
-            Struktur Folder MVC
+            Struktur Folder MVC dengan Supabase
           </h3>
           <div className="bg-gray-50 p-4 rounded border border-gray-200">
             <pre className="text-sm text-black whitespace-pre-wrap">
               {`backend/
 ├── config/              Konfigurasi
-│   └── database.ts     → MongoDB connection
+│   └── supabase.ts     → Supabase client initialization
 │
 ├── models/             MODEL (Data Layer)
-│   ├── userModel.ts    → Schema User
-│   └── courseModel.ts  → Schema Course
+│   ├── userModel.ts    → User queries & validation
+│   └── courseModel.ts  → Course queries & validation
 │
 ├── controllers/        CONTROLLER (Logic)
-│   ├── authController.ts
+│   ├── authController.ts    → Supabase Auth integration
 │   ├── userController.ts
 │   └── courseController.ts
 │
@@ -123,8 +172,11 @@ Client (Frontend)`}
 │   └── courseRoutes.ts
 │
 ├── middleware/         Middleware
-│   ├── auth.ts         → JWT authentication
+│   ├── auth.ts         → JWT verification (Supabase)
 │   └── errorHandler.ts → Global error handling
+│
+├── types/              TypeScript Types
+│   └── supabase.ts     → Database types (auto-generated)
 │
 └── server.ts           Entry Point`}
             </pre>
@@ -157,7 +209,8 @@ Client (Frontend)`}
               <div className="bg-gray-50 p-3 rounded border border-gray-200">
                 <code className="text-sm text-black">
                   {`router.post('/login', login);`}
-                  <br />→ Route mengarahkan ke controller function &quot;login&quot;
+                  <br />→ Route mengarahkan ke controller function
+                  &quot;login&quot;
                 </code>
               </div>
             </div>
@@ -360,37 +413,162 @@ Client (Frontend)`}
           </h3>
           <ul className="list-disc list-inside text-gray-700 space-y-1">
             <li>Node.js (v18+)</li>
-            <li>MongoDB (local atau MongoDB Atlas)</li>
+            <li>
+              Akun Supabase (gratis di{" "}
+              <a
+                href="https://supabase.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                supabase.com
+              </a>
+              )
+            </li>
             <li>npm atau yarn</li>
           </ul>
         </div>
 
         <div className="bg-white border border-gray-300 rounded-lg p-6 mb-4 shadow-sm">
           <h3 className="text-xl font-semibold mb-3 text-black">
-            1. Install Dependencies
+            1. Setup Supabase Project
           </h3>
-          <div className="bg-gray-900 text-gray-100 p-4 rounded">
-            <code>npm install</code>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm text-gray-700 mb-2">
+                <strong>a) Buat Project Baru</strong>
+              </p>
+              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-4">
+                <li>
+                  Login ke{" "}
+                  <a
+                    href="https://app.supabase.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    app.supabase.com
+                  </a>
+                </li>
+                <li>Klik &quot;New Project&quot;</li>
+                <li>
+                  Isi nama project, database password, dan pilih region terdekat
+                </li>
+                <li>Tunggu provisioning selesai (~2 menit)</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-700 mb-2">
+                <strong>b) Setup Database Tables</strong>
+              </p>
+              <p className="text-sm text-gray-600 mb-2">
+                Buka SQL Editor dan jalankan script ini:
+              </p>
+              <div className="bg-gray-900 text-gray-100 p-4 rounded text-xs overflow-auto">
+                <pre>{`-- Users table (extends Supabase Auth)
+CREATE TABLE users (
+  id UUID PRIMARY KEY REFERENCES auth.users(id),
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'instructor', 'admin')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Courses table
+CREATE TABLE courses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  category TEXT NOT NULL,
+  level TEXT NOT NULL CHECK (level IN ('beginner', 'intermediate', 'advanced')),
+  price INTEGER NOT NULL DEFAULT 0,
+  duration INTEGER NOT NULL,
+  instructor_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enrollments table
+CREATE TABLE enrollments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+  enrolled_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, course_id)
+);
+
+-- Enable Row Level Security
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE enrollments ENABLE ROW LEVEL SECURITY;
+
+-- Policies (basic - customize as needed)
+CREATE POLICY "Users can view their own data" ON users FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Anyone can view courses" ON courses FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Instructors can create courses" ON courses FOR INSERT TO authenticated 
+  WITH CHECK ((SELECT role FROM users WHERE id = auth.uid()) = 'instructor');`}</pre>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-700 mb-2">
+                <strong>c) Dapatkan API Keys</strong>
+              </p>
+              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-4">
+                <li>Pergi ke Settings → API</li>
+                <li>
+                  Copy <strong>Project URL</strong> dan{" "}
+                  <strong>anon/public key</strong>
+                </li>
+                <li>Simpan untuk digunakan di .env.local</li>
+              </ul>
+            </div>
           </div>
         </div>
 
         <div className="bg-white border border-gray-300 rounded-lg p-6 mb-4 shadow-sm">
           <h3 className="text-xl font-semibold mb-3 text-black">
-            2. Setup Environment (.env.local)
+            2. Install Dependencies
+          </h3>
+          <div className="bg-gray-900 text-gray-100 p-4 rounded">
+            <code>npm install</code>
+          </div>
+          <p className="text-sm text-gray-600 mt-2">
+            Package utama: @supabase/supabase-js, express, cors, jsonwebtoken
+          </p>
+        </div>
+
+        <div className="bg-white border border-gray-300 rounded-lg p-6 mb-4 shadow-sm">
+          <h3 className="text-xl font-semibold mb-3 text-black">
+            3. Setup Environment (.env.local)
           </h3>
           <div className="bg-gray-900 text-gray-100 p-4 rounded">
             <pre className="text-sm">
-              {`MONGODB_URI=mongodb://localhost:27017/collablearn
-JWT_SECRET=your_jwt_secret_here
+              {`# Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# JWT Configuration (get from Supabase Settings → API → JWT Secret)
+JWT_SECRET=your-supabase-jwt-secret
+
+# Server Configuration
 PORT=3001
-FRONTEND_URL=http://localhost:3000`}
+FRONTEND_URL=http://localhost:3000
+NODE_ENV=development`}
             </pre>
           </div>
+          <p className="text-sm text-yellow-700 bg-yellow-50 p-3 rounded mt-3 border border-yellow-200">
+            <strong>Penting:</strong> Service Role Key hanya digunakan di
+            backend untuk bypass RLS. Jangan pernah expose ke frontend!
+          </p>
         </div>
 
         <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-sm">
           <h3 className="text-xl font-semibold mb-3 text-black">
-            3. Run Servers
+            4. Run Servers
           </h3>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
@@ -498,12 +676,6 @@ FRONTEND_URL=http://localhost:3000`}
                 backend/MVC_CONCEPT.ts
               </span>{" "}
               - Penjelasan detail MVC pattern
-            </li>
-            <li>
-              <span className="font-semibold text-black">
-                tests/API_DOCUMENTATION.md
-              </span>{" "}
-              - Reference semua endpoints
             </li>
           </ul>
         </div>

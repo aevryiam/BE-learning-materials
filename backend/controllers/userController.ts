@@ -1,10 +1,10 @@
 /**
- * USER CONTROLLER (Logic Layer)
- * Mengatur CRUD operations untuk User
+ * USER CONTROLLER (Logic Layer - Supabase)
+ * Mengatur CRUD operations untuk User menggunakan Supabase
  */
 
 import { Request, Response } from "express";
-import User from "../models/userModel";
+import UserModel from "../models/userModel";
 
 /**
  * @desc    Get semua users
@@ -16,24 +16,17 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
     // Query parameters untuk filtering & pagination
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const skip = (page - 1) * limit;
 
-    const users = await User.find()
-      .select("-password") // Jangan tampilkan password
-      .limit(limit)
-      .skip(skip)
-      .sort({ createdAt: -1 }); // Urutkan dari yang terbaru
-
-    const total = await User.countDocuments();
+    const result = await UserModel.findAll(page, limit);
 
     res.status(200).json({
       success: true,
-      data: users,
+      data: result.users,
       pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
       },
     });
   } catch (error) {
@@ -57,7 +50,7 @@ export const getUserById = async (
   res: Response
 ): Promise<void> => {
   try {
-    const user = await User.findById(req.params.id).select("-password");
+    const user = await UserModel.findById(req.params.id);
 
     if (!user) {
       res.status(404).json({
@@ -94,22 +87,11 @@ export const updateUser = async (
   try {
     const { name, email, role } = req.body;
 
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { name, email, role },
-      {
-        new: true, // Return updated document
-        runValidators: true, // Jalankan validasi schema
-      }
-    ).select("-password");
-
-    if (!user) {
-      res.status(404).json({
-        success: false,
-        message: "User tidak ditemukan",
-      });
-      return;
-    }
+    const user = await UserModel.update(req.params.id, {
+      name,
+      email,
+      role,
+    });
 
     res.status(200).json({
       success: true,
@@ -137,9 +119,9 @@ export const deleteUser = async (
   res: Response
 ): Promise<void> => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const result = await UserModel.delete(req.params.id);
 
-    if (!user) {
+    if (!result) {
       res.status(404).json({
         success: false,
         message: "User tidak ditemukan",

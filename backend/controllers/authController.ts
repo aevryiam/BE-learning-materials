@@ -1,11 +1,14 @@
 /**
- * AUTH CONTROLLER (Logic Layer)
- * Mengatur logika bisnis untuk autentikasi (Register & Login)
+ * AUTH CONTROLLER (Logic Layer - Supabase)
+ *
+ * Mengatur logika bisnis untuk autentikasi menggunakan Supabase Auth.
+ * Supabase menyediakan built-in authentication dengan JWT tokens.
  */
 
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import User from "../models/userModel";
+import { supabaseAdmin } from "../config/supabase";
+import UserModel from "../models/userModel";
 
 // Interface untuk request body
 interface RegisterBody {
@@ -24,6 +27,8 @@ interface LoginBody {
  * @desc    Register user baru
  * @route   POST /api/auth/register
  * @access  Public
+ *
+ * Menggunakan Supabase Auth untuk create user, lalu simpan data tambahan di users table
  */
 export const register = async (
   req: Request<object, object, RegisterBody>,
@@ -41,8 +46,16 @@ export const register = async (
       return;
     }
 
+    if (password.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: "Password minimal 6 karakter",
+      });
+      return;
+    }
+
     // Cek apakah email sudah terdaftar
-    const existingUser = await User.findOne({ email });
+    const existingUser = await UserModel.findByEmail(email);
     if (existingUser) {
       res.status(400).json({
         success: false,
@@ -51,17 +64,39 @@ export const register = async (
       return;
     }
 
-    // Buat user baru (password akan di-hash otomatis oleh middleware di model)
-    const user = await User.create({
-      name,
+    // 1. Create user di Supabase Auth
+    const { data: authData, error: authError } =
+      await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true, // Auto-confirm email
+        user_metadata: {
+          name,
+          role: role || "student",
+        },
+      });
+
+    if (authError || !authData.user) {
+      console.error("Supabase Auth Error:", authError);
+      res.status(500).json({
+        success: false,
+        message: "Gagal membuat akun di Supabase Auth",
+        error: authError?.message,
+      });
+      return;
+    }
+
+    // 2. Simpan data tambahan di users table
+    const user = await UserModel.create({
+      id: authData.user.id,
       email,
-      password,
+      name,
       role: role || "student",
     });
 
-    // Generate JWT Token
+    // 3. Generate JWT Token (opsional, atau bisa pakai Supabase session)
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET || "default_secret",
       { expiresIn: "7d" }
     );
@@ -71,7 +106,7 @@ export const register = async (
       message: "User berhasil didaftarkan",
       data: {
         user: {
-          id: user._id,
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,
@@ -94,6 +129,8 @@ export const register = async (
  * @desc    Login user
  * @route   POST /api/auth/login
  * @access  Public
+ *
+ * Menggunakan Supabase Auth untuk sign in
  */
 export const login = async (
   req: Request<object, object, LoginBody>,
@@ -111,29 +148,35 @@ export const login = async (
       return;
     }
 
-    // Cari user dan ambil password (select: false by default)
-    const user = await User.findOne({ email }).select("+password");
+    // 1. Sign in dengan Supabase Auth
+    const { data: authData, error: authError } =
+      await supabaseAdmin.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+    if (authError || !authData.user) {
+      res.status(401).json({
+        success: false,
+        message: "Email atau password salah",
+        error: authError?.message,
+      });
+      return;
+    }
+
+    // 2. Ambil data lengkap dari users table
+    const user = await UserModel.findById(authData.user.id);
     if (!user) {
-      res.status(401).json({
+      res.status(404).json({
         success: false,
-        message: "Email atau password salah",
+        message: "Data user tidak ditemukan di database",
       });
       return;
     }
 
-    // Cek password menggunakan method dari model
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      res.status(401).json({
-        success: false,
-        message: "Email atau password salah",
-      });
-      return;
-    }
-
-    // Generate JWT Token
+    // 3. Generate JWT Token (atau bisa pakai authData.session.access_token)
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET || "default_secret",
       { expiresIn: "7d" }
     );
@@ -143,12 +186,13 @@ export const login = async (
       message: "Login berhasil",
       data: {
         user: {
-          id: user._id,
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,
         },
         token,
+        // supabaseSession: authData.session, // Opsional: return Supabase session
       },
     });
   } catch (error) {
@@ -170,9 +214,8 @@ export const login = async (
 export const getMe = async (req: Request, res: Response): Promise<void> => {
   try {
     // req.user sudah diset oleh middleware auth
-    const user = await User.findById(
-      (req as unknown as { user: { id: string } }).user.id
-    );
+    const userId = (req as unknown as { user: { id: string } }).user.id;
+    const user = await UserModel.findById(userId);
 
     if (!user) {
       res.status(404).json({
@@ -185,10 +228,11 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json({
       success: true,
       data: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
+        created_at: user.created_at,
       },
     });
   } catch (error) {

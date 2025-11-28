@@ -2,7 +2,7 @@
 
 Platform pembelajaran kolaboratif dengan backend Express.js MVC pattern dan frontend Next.js.
 
-> **Tujuan Project**: Belajar full-stack development dengan implementasi authentication, authorization, dan CRUD operations.
+> **Tujuan Project**: Belajar full-stack development dengan implementasi authentication, authorization, dan CRUD operations menggunakan Supabase.
 
 ---
 
@@ -24,7 +24,7 @@ Platform pembelajaran kolaboratif dengan backend Express.js MVC pattern dan fron
 ### Prerequisites
 
 - Node.js (v18+)
-- MongoDB (local atau MongoDB Atlas)
+- Supabase account (https://supabase.com)
 - npm atau yarn
 
 ### 1. Install Dependencies
@@ -35,13 +35,49 @@ npm install
 yarn install
 ```
 
-### 2. Setup Environment Variables
+### 2. Setup Supabase Project
+
+1. **Buat Project Supabase**
+
+   - Kunjungi https://app.supabase.com
+   - Klik "New Project"
+   - Isi detail project:
+     - Name: `collablearn` (atau nama sesukamu)
+     - Database Password: Buat password yang kuat (simpan baik-baik!)
+     - Region: Pilih yang terdekat (misalnya Singapore)
+   - Klik "Create new project"
+   - Tunggu ~2 menit sampai project selesai dibuat
+
+2. **Jalankan SQL Schema**
+
+   - Di Supabase Dashboard, buka **SQL Editor** (sidebar kiri)
+   - Klik **New Query**
+   - Copy semua isi file `backend/config/schema.sql`
+   - Paste ke SQL Editor
+   - Klik **Run** atau tekan `Ctrl + Enter`
+   - Jika berhasil, akan muncul pesan "Success. No rows returned"
+
+3. **Dapatkan API Keys**
+   - Di Supabase Dashboard, buka **Settings** → **API**
+   - Copy credentials berikut:
+     - **Project URL** (contoh: `https://xxxxx.supabase.co`)
+     - **anon public key** (untuk client-side)
+     - **service_role key** (untuk server-side - JANGAN EXPOSE!)
+
+### 3. Setup Environment Variables
 
 **`.env.local`** (Backend):
 
 ```env
-MONGODB_URI=mongodb://localhost:27017/collablearn
-JWT_SECRET=kolaborasi_learning_secret_2024
+# Supabase Configuration
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+
+# JWT Configuration (harus sama dengan Supabase JWT Secret)
+JWT_SECRET=your_supabase_jwt_secret_here
+
+# Server Configuration
 PORT=3001
 NODE_ENV=development
 FRONTEND_URL=http://localhost:3000
@@ -53,19 +89,19 @@ FRONTEND_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
-### 3. Start MongoDB
+> **📝 Note**: Untuk mendapatkan `JWT_SECRET`, buka **Settings** → **API** → **JWT Settings** di Supabase Dashboard, lalu copy nilai **JWT Secret**.
 
-Jika menggunakan MongoDB lokal:
+### 4. Verify Database Setup
 
-```bash
-# Windows (jika sudah install MongoDB)
-mongod
+Cek apakah tables berhasil dibuat:
 
-# Atau gunakan MongoDB Atlas (cloud)
-# Update MONGODB_URI dengan connection string dari Atlas
-```
+1. Di Supabase Dashboard, buka **Table Editor**
+2. Kamu akan melihat 3 tables:
+   - ✅ `users` - User management
+   - ✅ `courses` - Course data
+   - ✅ `enrollments` - Student enrollments
 
-### 4. Run Development Servers
+### 5. Run Development Servers
 
 **Terminal 1 - Backend:**
 
@@ -83,7 +119,7 @@ npm run dev
 
 ✅ Frontend berjalan di: `http://localhost:3000`
 
-### 5. Test Installation
+### 6. Test Installation
 
 Buka browser:
 
@@ -91,85 +127,79 @@ Buka browser:
 http://localhost:3000
 ```
 
-Kamu akan melihat halaman home dengan learning resources dan link ke API testing interface.
-
----
-
-## 📁 Struktur Folder
-
-```
-be/
-├── 📂 backend/                     # Express.js Backend (MVC)
-│   ├── 📂 config/
-│   │   └── database.ts            # MongoDB connection
-│   │
-│   ├── 📂 models/                 # MODEL - Data Layer
-│   │   ├── userModel.ts          # User schema (name, email, password, role)
-│   │   └── courseModel.ts        # Course schema dengan instructor relationship
-│   │
-│   ├── 📂 controllers/            # CONTROLLER - Business Logic
-│   │   ├── authController.ts     # register(), login(), getMe()
-│   │   ├── userController.ts     # getUsers(), getUserById(), updateUser(), deleteUser()
-│   │   └── courseController.ts   # getCourses(), createCourse(), updateCourse(), deleteCourse()
-│   │
-│   ├── 📂 routes/                 # ROUTES - URL Mapping
-│   │   ├── authRoutes.ts         # /api/auth/* endpoints
-│   │   ├── userRoutes.ts         # /api/users/* endpoints
-│   │   └── courseRoutes.ts       # /api/courses/* endpoints
-│   │
-│   ├── 📂 middleware/
-│   │   ├── auth.ts               # JWT verification & role authorization
-│   │   └── errorHandler.ts      # Global error handling
-│   │
-│   ├── server.ts                  # 🚀 Express server entry point
-│   └── MVC_CONCEPT.ts            # 📖 MVC documentation lengkap
+Kamu akan melihat halaman home dengan learning resources tentang Supabase dan MVC pattern, plus link ke API testing interface.
+├── 📂 backend/ # Express.js Backend (MVC)
+│ ├── 📂 config/
+│ │ └── database.ts # MongoDB connection
+│ │
+│ ├── 📂 models/ # MODEL - Data Layer
+│ │ ├── userModel.ts # User schema (name, email, password, role)
+│ │ └── courseModel.ts # Course schema dengan instructor relationship
+│ │
+│ ├── 📂 controllers/ # CONTROLLER - Business Logic
+│ │ ├── authController.ts # register(), login(), getMe()
+│ │ ├── userController.ts # getUsers(), getUserById(), updateUser(), deleteUser()
+│ │ └── courseController.ts # getCourses(), createCourse(), updateCourse(), deleteCourse()
+│ │
+│ ├── 📂 routes/ # ROUTES - URL Mapping
+│ │ ├── authRoutes.ts # /api/auth/_ endpoints
+│ │ ├── userRoutes.ts # /api/users/_ endpoints
+│ │ └── courseRoutes.ts # /api/courses/\* endpoints
+│ │
+│ ├── 📂 middleware/
+│ │ ├── auth.ts # JWT verification & role authorization
+│ │ └── errorHandler.ts # Global error handling
+│ │
+│ ├── server.ts # 🚀 Express server entry point
+│ └── MVC_CONCEPT.ts # 📖 MVC documentation lengkap
 │
-├── 📂 src/                        # Frontend Source Code
-│   ├── 📂 components/
-│   │   ├── 📂 Contexts/
-│   │   │   └── AuthContext.tsx   # Global auth state (login, logout, user)
-│   │   │
-│   │   ├── 📂 Element/           # Reusable UI Components
-│   │   │   ├── Button.tsx        # Button dengan variants
-│   │   │   ├── Input.tsx         # Input field dengan validation
-│   │   │   └── Card.tsx          # Card container
-│   │   │
-│   │   └── 📂 Layout/
-│   │       └── DefaultLayout.tsx # Main layout (navbar, footer)
-│   │
-│   ├── 📂 utils/
-│   │   ├── 📂 helpers/
-│   │   │   ├── api.ts           # Fetch helper & API functions
-│   │   │   └── storage.ts       # localStorage wrapper
-│   │   │
-│   │   └── 📂 hooks/             # Custom React hooks (future)
-│   │
-│   ├── 📂 modules/               # Feature Modules
-│   │   └── 📂 api-testing/
-│   │       └── ApiTestingView.tsx # 🧪 Interactive API testing UI
-│   │
-│   └── 📂 styles/                # CSS files (future)
+├── 📂 src/ # Frontend Source Code
+│ ├── 📂 components/
+│ │ ├── 📂 Contexts/
+│ │ │ └── AuthContext.tsx # Global auth state (login, logout, user)
+│ │ │
+│ │ ├── 📂 Element/ # Reusable UI Components
+│ │ │ ├── Button.tsx # Button dengan variants
+│ │ │ ├── Input.tsx # Input field dengan validation
+│ │ │ └── Card.tsx # Card container
+│ │ │
+│ │ └── 📂 Layout/
+│ │ └── DefaultLayout.tsx # Main layout (navbar, footer)
+│ │
+│ ├── 📂 utils/
+│ │ ├── 📂 helpers/
+│ │ │ ├── api.ts # Fetch helper & API functions
+│ │ │ └── storage.ts # localStorage wrapper
+│ │ │
+│ │ └── 📂 hooks/ # Custom React hooks (future)
+│ │
+│ ├── 📂 modules/ # Feature Modules
+│ │ └── 📂 api-testing/
+│ │ └── ApiTestingView.tsx # 🧪 Interactive API testing UI
+│ │
+│ └── 📂 styles/ # CSS files (future)
 │
-├── 📂 app/                        # Next.js App Directory
-│   ├── page.tsx                  # Home page dengan learning resources
-│   ├── api-testing/
-│   │   └── page.tsx              # API testing interface
-│   ├── layout.tsx                # Root layout
-│   └── globals.css               # Global styles
+├── 📂 app/ # Next.js App Directory
+│ ├── page.tsx # Home page dengan learning resources
+│ ├── api-testing/
+│ │ └── page.tsx # API testing interface
+│ ├── layout.tsx # Root layout
+│ └── globals.css # Global styles
 │
 ├── 📂 tests/
-│   ├── API_DOCUMENTATION.md      # Complete API reference
-│   └── test-requests.js          # Postman/Thunder Client examples
+│ ├── API_DOCUMENTATION.md # Complete API reference
+│ └── test-requests.js # Postman/Thunder Client examples
 │
-├── 📂 public/                     # Static files
+├── 📂 public/ # Static files
 │
-├── 📄 .env                        # Frontend env (NEXT_PUBLIC_API_URL)
-├── 📄 .env.local                  # Backend env (MONGODB_URI, JWT_SECRET)
-├── 📄 package.json                # Dependencies & scripts
-├── 📄 tsconfig.json               # TypeScript config
-├── 📄 eslint.config.mjs           # ESLint config
-├── 📄 nodemon.json                # Nodemon config for backend
-└── 📄 next.config.ts              # Next.js config
+├── 📄 .env # Frontend env (NEXT_PUBLIC_API_URL)
+├── 📄 .env.local # Backend env (MONGODB_URI, JWT_SECRET)
+├── 📄 package.json # Dependencies & scripts
+├── 📄 tsconfig.json # TypeScript config
+├── 📄 eslint.config.mjs # ESLint config
+├── 📄 nodemon.json # Nodemon config for backend
+└── 📄 next.config.ts # Next.js config
+
 ```
 
 ### File Purposes
@@ -206,55 +236,59 @@ be/
 ### Request Flow
 
 ```
+
 Client Request
-    ↓
+↓
 ROUTE (routes/authRoutes.ts)
-    ↓
+↓
 MIDDLEWARE (auth.ts) - JWT verification
-    ↓
+↓
 CONTROLLER (controllers/authController.ts)
-    ↓
+↓
 MODEL (models/userModel.ts)
-    ↓
+↓
 DATABASE (MongoDB)
-    ↓
+↓
 CONTROLLER (process data)
-    ↓
+↓
 VIEW (JSON Response)
-    ↓
+↓
 Client Response
+
 ```
 
 ### Contoh Flow: Login User
 
 ```
+
 [Frontend] User klik "Login"
-    ↓
+↓
 [Frontend] AuthContext.login()
-    ↓
+↓
 [Frontend] api.ts: authAPI.login()
-    ↓
+↓
 [Frontend] fetch POST /api/auth/login
-    ↓
+↓
 [Backend] routes/authRoutes.ts menerima request
-    ↓
+↓
 [Backend] controllers/authController.ts: login()
-    ↓
+↓
 [Backend] models/userModel.ts: User.findOne({ email })
-    ↓
+↓
 [Database] MongoDB query
-    ↓
+↓
 [Backend] Verify password dengan bcrypt
-    ↓
+↓
 [Backend] Generate JWT token
-    ↓
+↓
 [Backend] Response { success: true, data: { user, token } }
-    ↓
+↓
 [Frontend] Simpan token ke localStorage
-    ↓
+↓
 [Frontend] Update AuthContext state
-    ↓
+↓
 [Frontend] User logged in! ✅
+
 ```
 
 Untuk penjelasan lengkap, lihat file `backend/MVC_CONCEPT.ts`.
@@ -266,8 +300,10 @@ Untuk penjelasan lengkap, lihat file `backend/MVC_CONCEPT.ts`.
 ### Base URL
 
 ```
+
 http://localhost:3001
-```
+
+````
 
 ### Authentication (`/api/auth`)
 
@@ -310,7 +346,7 @@ Content-Type: application/json
   "password": "password123",
   "role": "student"
 }
-```
+````
 
 #### Login
 

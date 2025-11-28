@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CollabLearn API Testing",
-  description: "Backend API testing interface for CollabLearn",
+  title: "BE Learning Collaboration",
+  description: "Backend API testing interface for BE Learning Collaboration",
 };
 
 export default function RootLayout({

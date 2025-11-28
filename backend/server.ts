@@ -1,11 +1,11 @@
 /**
- * EXPRESS SERVER (Entry Point)
- * File utama untuk menjalankan Express.js server
+ * EXPRESS SERVER (Entry Point - Supabase Version)
+ * File utama untuk menjalankan Express.js server dengan Supabase
  *
  * ALUR REQUEST:
  * 1. Client mengirim request -> Express menerima di routes
  * 2. Routes memanggil Controller yang sesuai
- * 3. Controller memproses logika dan query ke Model (Database)
+ * 3. Controller memproses logika dan query ke Model (Supabase Database)
  * 4. Model mengembalikan data ke Controller
  * 5. Controller mengirim response (JSON) kembali ke Client
  */
@@ -13,13 +13,15 @@
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import connectDB from "./config/database";
 import { errorHandler } from "./middleware/errorHandler";
 
 // Import Routes
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import courseRoutes from "./routes/courseRoutes";
+
+// Import Supabase config to initialize connection
+import "./config/supabase";
 
 // Load environment variables
 dotenv.config({ path: ".env.local" });
@@ -28,8 +30,14 @@ dotenv.config({ path: ".env.local" });
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
 
-// Connect to Database
-connectDB();
+// Validate Supabase credentials
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("❌ ERROR: Supabase credentials missing!");
+  console.error(
+    "Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local"
+  );
+  process.exit(1);
+}
 
 // ========== MIDDLEWARE ==========
 
@@ -58,6 +66,7 @@ app.get("/", (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: "🚀 CollabLearn Backend API is running!",
+    database: "Supabase PostgreSQL",
     timestamp: new Date().toISOString(),
   });
 });
@@ -84,6 +93,7 @@ app.listen(PORT, () => {
   console.log("=================================");
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Local: http://localhost:${PORT}`);
+  console.log(`🗄️  Database: Supabase (PostgreSQL)`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log("=================================");
 });

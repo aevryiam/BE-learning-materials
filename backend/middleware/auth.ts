@@ -1,11 +1,15 @@
 /**
- * AUTH MIDDLEWARE
- * Middleware untuk autentikasi menggunakan JWT
- * Melindungi routes yang membutuhkan login
+ * AUTH MIDDLEWARE (Supabase Compatible)
+ *
+ * Middleware untuk autentikasi menggunakan JWT.
+ * Support untuk:
+ * - Custom JWT tokens (yang kita generate sendiri)
+ * - Supabase Auth tokens (verify via Supabase)
  */
 
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { supabaseAdmin } from "../config/supabase";
 
 // Interface untuk JWT payload
 interface JwtPayload {
@@ -17,6 +21,10 @@ interface JwtPayload {
 /**
  * Middleware untuk verify JWT token
  * Token dikirim via header: Authorization: Bearer <token>
+ *
+ * Supports 2 modes:
+ * 1. Custom JWT (our own tokens)
+ * 2. Supabase Auth tokens (optional)
  */
 export const protect = async (
   req: Request,
@@ -43,22 +51,53 @@ export const protect = async (
       return;
     }
 
-    // Verify token
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "default_secret"
-    ) as JwtPayload;
+    try {
+      // Try to verify as custom JWT first
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || "default_secret"
+      ) as JwtPayload;
 
-    // Attach user info ke request object
-    (req as unknown as { user: JwtPayload }).user = decoded;
+      // Attach user info ke request object
+      (req as unknown as { user: JwtPayload }).user = decoded;
+      next();
+    } catch {
+      // If custom JWT fails, try Supabase Auth token
+      const {
+        data: { user },
+        error,
+      } = await supabaseAdmin.auth.getUser(token);
 
-    next();
+      if (error || !user) {
+        res.status(401).json({
+          success: false,
+          message: "Token tidak valid atau expired",
+        });
+        return;
+      }
+
+      // Get user role from database
+      const { data: userData } = await supabaseAdmin
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      // Attach user info from Supabase
+      (req as unknown as { user: JwtPayload }).user = {
+        id: user.id,
+        email: user.email || "",
+        role: (userData as { role: string } | null)?.role || "student",
+      };
+
+      next();
+    }
   } catch (error) {
     const err = error as Error;
     console.error("Auth Middleware Error:", err);
     res.status(401).json({
       success: false,
-      message: "Token tidak valid atau expired",
+      message: "Authentication failed",
       error: err.message,
     });
   }
