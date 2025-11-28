@@ -1,12 +1,12 @@
 "use client";
 
 import DefaultLayout from "@/components/Layout/DefaultLayout";
-import HomeView from "@/modules/home/HomeView";
+import ApiTestingView from "@/modules/api-testing/ApiTestingView";
 
-export default function Home() {
+export default function ApiTestingPage() {
   return (
     <DefaultLayout>
-      <HomeView />
+      <ApiTestingView />
     </DefaultLayout>
   );
 }
