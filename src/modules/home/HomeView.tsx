@@ -5,18 +5,26 @@
 
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 export default function HomeView() {
   return (
     <div className="max-w-5xl mx-auto py-12 px-4">
       <div className="text-center mb-12">
+        <Image
+          src="/logo.webp"
+          alt="Learning Collaboration Logo"
+          width={100}
+          height={100}
+          className="mx-auto mb-4"
+        />
         <h1 className="text-4xl font-bold mb-4 text-black">
-          CollabLearn - Backend Learning Platform
+          Learning Collaboration - Backend Learning Platform
         </h1>
         <p className="text-xl text-gray-700">
           Platform pembelajaran kolaboratif dengan backend Express.js MVC
-          pattern dan frontend Next.js
+          pattern
         </p>
       </div>
 

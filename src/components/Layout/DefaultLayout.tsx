@@ -18,15 +18,9 @@ export default function DefaultLayout({ children }: DefaultLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <nav className="bg-white shadow-sm border-b">
+      <nav className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-blue-600">
-                CollabLearn API
-              </h1>
-            </div>
-
             {isAuthenticated && user && (
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-600">
@@ -52,8 +46,8 @@ export default function DefaultLayout({ children }: DefaultLayoutProps) {
       {/* Footer */}
       <footer className="bg-white border-t mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <p className="text-center text-sm text-gray-500">
-            CollabLearn Backend API Testing Interface
+          <p className="text-center text-sm text-black">
+            Webdev Learning Collaboration - BE
           </p>
         </div>
       </footer>
